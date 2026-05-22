@@ -1,0 +1,6 @@
+{
+  "name": "Barber_Pro",
+  "description": "Une application PWA de gestion de file d'attente en temps réel et de comptabilité pour salons de coiffure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
