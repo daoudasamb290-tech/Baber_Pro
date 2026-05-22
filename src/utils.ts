@@ -64,12 +64,14 @@ export const INITIAL_BARBERS: Barber[] = [
 ];
 
 export const INITIAL_SERVICES: Service[] = [
-  { id: 'coupe-simple', name: 'Coupe classique', price: 2500, duration: 20 },
-  { id: 'degrade-barbe', name: 'Dégradé + barbe', price: 4000, duration: 30 },
-  { id: 'degrade-twist', name: 'Dégradé + twist', price: 5000, duration: 35 },
-  { id: 'shampoing-soin', name: 'Masque et soin complet', price: 3000, duration: 15 },
-  { id: 'dreadlocks', name: 'Départ / Entretien Locks', price: 8000, duration: 60 },
-  { id: 'afro-design', name: 'Afro soufflé + Motif', price: 4500, duration: 30 },
+  { id: 'coupe-simple', name: 'Coupe classique', price: 2500, duration: 20, category: 'Coupes' },
+  { id: 'degrade-barbe', name: 'Dégradé + barbe', price: 4000, duration: 30, category: 'Coupes' },
+  { id: 'degrade-twist', name: 'Dégradé + twist', price: 5000, duration: 35, category: 'Coupes' },
+  { id: 'afro-design', name: 'Afro soufflé + Motif', price: 4500, duration: 30, category: 'Coupes' },
+  { id: 'taille-barbe', name: 'Taille barbe classique', price: 1500, duration: 20, category: 'Barbe' },
+  { id: 'rasage-complet', name: 'Rasage complet traditionnel', price: 2000, duration: 25, category: 'Barbe' },
+  { id: 'shampoing-soin', name: 'Masque et soin complet', price: 3000, duration: 15, category: 'Soins' },
+  { id: 'dreadlocks', name: 'Départ / Entretien Locks', price: 8000, duration: 60, category: 'Soins' },
 ];
 
 /**

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useBarber } from '../context/BarberContext';
+import { Service } from '../types';
 import { getEstimatedWaitTime, formatFCFA } from '../utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Scissors, Clock, Users, Flame, ChevronRight, Sparkles, Check, User, ArrowLeft, Trash2, Calendar } from 'lucide-react';
@@ -12,6 +13,10 @@ import { Scissors, Clock, Users, Flame, ChevronRight, Sparkles, Check, User, Arr
 export default function ClientView() {
   const {
     shopName,
+    shopAddress,
+    shopCoverUrl,
+    shopLogoUrl,
+    shopIsOpen,
     barbers,
     services,
     queue,
@@ -313,116 +318,230 @@ export default function ClientView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full"
+            className="w-full bg-neutral-50 min-h-screen text-neutral-800"
           >
-            {/* Shop Hero banner */}
-            <div className="bg-neutral-950 px-5 pt-5 pb-5 border-b border-neutral-800">
-              <div className="flex items-center gap-3.5 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-white text-neutral-900 flex items-center justify-center shadow-lg font-bold text-xl">
-                  ✂️
+            {/* PHOTO DE COUVERTURE */}
+            <div className="relative w-full h-[220px] bg-neutral-950 overflow-hidden">
+              {shopCoverUrl ? (
+                <img
+                  src={shopCoverUrl}
+                  alt="Couverture"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#26160a] flex items-center justify-center relative">
+                  <div className="absolute inset-0 opacity-5 pointer-events-none">
+                    <div className="w-full h-full grid grid-cols-6 grid-rows-4">
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <div key={i} className="border-r border-b border-white"></div>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="text-7xl text-white/5 font-sans transform -rotate-15">✂️</span>
                 </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">{shopName}</h3>
-                  <p className="text-xs text-neutral-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    Ouvert · jusqu'à 20h
-                  </p>
-                </div>
-              </div>
-
-              {/* Live quick performance stats */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-neutral-900 border border-neutral-800/80 rounded-xl py-2 px-1 text-center">
-                  <span className="text-sm font-bold text-white block">4.9 ★</span>
-                  <span className="text-[9px] text-neutral-500 block uppercase font-medium mt-0.5">Note</span>
-                </div>
-                <div className="bg-neutral-900 border border-neutral-800/80 rounded-xl py-2 px-1 text-center">
-                  <span className="text-sm font-bold text-white block">
-                    {queue.filter((q) => q.status === 'waiting' || q.status === 'active').length}
-                  </span>
-                  <span className="text-[9px] text-neutral-500 block uppercase font-medium mt-0.5">En Ligne</span>
-                </div>
-                <div className="bg-neutral-950 border border-neutral-800/85 rounded-xl py-2 px-1 text-center font-mono text-emerald-400">
-                  <span className="text-xs font-bold block mt-1">Live</span>
-                  <span className="text-[8px] text-neutral-500 uppercase font-medium tracking-wide">File</span>
-                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+              <div className="absolute top-4 left-4 text-[10px] font-mono uppercase tracking-widest text-neutral-300 bg-neutral-950/50 backdrop-blur-md px-2.5 py-1 rounded-full border border-neutral-800">
+                Barber_Pro
               </div>
             </div>
 
-            <div className="p-4">
+            {/* PROFIL BOUTIQUE */}
+            <div className="bg-white px-5 pt-3 pb-4 border-b border-neutral-200">
+              <div className="flex items-end gap-3.5 mb-2.5">
+                {shopLogoUrl ? (
+                  <img
+                    src={shopLogoUrl}
+                    alt="Logo"
+                    className="w-20 h-20 rounded-full object-cover border-[3px] border-white shadow-xl -mt-10 shrink-0 bg-neutral-950"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-neutral-900 text-white flex items-center justify-center font-black text-2xl border-[3px] border-white shadow-xl -mt-10 shrink-0 select-none uppercase font-mono">
+                    {shopName.split(' ').map(n => n[0]).join('').substring(0, 2) || "BP"}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 pb-1">
+                  <h3 className="text-lg font-black text-neutral-900 tracking-tight leading-snug">{shopName}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`w-2 h-2 rounded-full ${shopIsOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+                    <span className="text-xs font-bold text-neutral-750">
+                      {shopIsOpen ? 'Ouvert · jusqu\'à 20h' : 'Fermé · Réouverture demain'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs font-semibold text-neutral-400 flex items-center gap-1.5 mt-1 font-mono">
+                📍 {shopAddress}
+              </p>
+            </div>
+
+            {/* STATS */}
+            <div className="grid grid-cols-3 bg-white border-b border-neutral-200">
+              <div className="py-3 px-2 text-center border-r border-neutral-200/60">
+                <span className="text-lg font-black text-neutral-900 block font-mono">4.9★</span>
+                <span className="text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider block mt-0.5">Note</span>
+              </div>
+              <div className="py-3 px-2 text-center border-r border-neutral-200/60">
+                <span className="text-lg font-black text-neutral-900 block font-mono">
+                  {queue.filter((q) => q.status === 'waiting' || q.status === 'active').length}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider block mt-0.5">En Ligne</span>
+              </div>
+              <div className="py-3 px-2 text-center">
+                <span className="text-lg font-black text-emerald-500 block font-mono">Live</span>
+                <span className="text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider block mt-0.5">File</span>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-6">
               <AnimatePresence mode="wait">
                 {!selectedBarberId ? (
-                  /* Step A: Choose Barber */
+                  /* Step A: Choose Barber & View Categorized Services list */
                   <motion.div
                     key="step-barber"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
-                    className="space-y-3.5"
+                    className="space-y-6"
                   >
-                    <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest px-1">
-                      Choisir Votre Coiffeur
-                    </p>
+                    {/* BARBIERS GRID SECTION */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-1.5 px-0.5">
+                        <Scissors className="w-4 h-4 text-neutral-900" />
+                        <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">
+                          Choisir Votre Coiffeur
+                        </h4>
+                      </div>
 
-                    {barbers.map((barber) => {
-                      const stats = getBarberStats(barber.id, barber.avgTime);
-                      const isOffline = barber.status === 'offline';
-                      return (
-                        <div
-                          key={barber.id}
-                          onClick={() => {
-                            if (!isOffline) {
-                              setSelectedBarberId(barber.id);
-                              const shopId = localStorage.getItem('barberq_shop_id') || 'default-shop';
-                              window.history.pushState({}, '', `/shop/${shopId}/join/${barber.id}`);
-                              window.dispatchEvent(new PopStateEvent('popstate'));
-                            }
-                          }}
-                          className={`group relative flex items-center gap-3.5 p-3.5 bg-neutral-900 border rounded-2xl transition-all ${
-                            isOffline
-                              ? 'opacity-50 cursor-not-allowed border-neutral-800'
-                              : 'active:scale-[0.98] border-neutral-800 hover:border-neutral-700 cursor-pointer'
-                          }`}
-                        >
-                          <div
-                            className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
-                              barber.id === 'moussa'
-                                ? 'bg-amber-550 bg-neutral-800 text-stone-200 border border-stone-600'
-                                : 'bg-neutral-800 text-neutral-300'
-                            }`}
-                          >
-                            {barber.initials}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="text-sm font-semibold text-white group-hover:text-green-400 transition-colors">
-                                {barber.name}
-                              </h4>
-                              {isOffline && (
-                                <span className="text-[10px] bg-neutral-850 px-1.5 py-0.5 rounded text-neutral-500 font-medium">
-                                  Absent
-                                </span>
+                      <div className="grid gap-2.5">
+                        {barbers.map((barber) => {
+                          const stats = getBarberStats(barber.id, barber.avgTime);
+                          const isOffline = barber.status === 'offline';
+                          return (
+                            <div
+                              key={barber.id}
+                              onClick={() => {
+                                if (!isOffline) {
+                                  setSelectedBarberId(barber.id);
+                                  const shopId = localStorage.getItem('barberq_shop_id') || 'default-shop';
+                                  window.history.pushState({}, '', `/shop/${shopId}/join/${barber.id}`);
+                                  window.dispatchEvent(new PopStateEvent('popstate'));
+                                }
+                              }}
+                              className={`group relative flex items-center gap-3.5 p-3.5 bg-white border border-neutral-200 hover:bg-neutral-100/65 rounded-2xl transition-all shadow-sm ${
+                                isOffline
+                                  ? 'opacity-55 cursor-not-allowed'
+                                  : 'active:scale-[0.98] cursor-pointer'
+                              }`}
+                            >
+                              <div
+                                className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-black border border-neutral-100 uppercase shrink-0 ${
+                                  isOffline
+                                    ? 'bg-neutral-100 text-neutral-400'
+                                    : 'bg-neutral-900 text-white shadow-sm'
+                                }`}
+                              >
+                                {barber.initials}
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className="text-sm font-black text-neutral-900 group-hover:text-amber-600 transition-colors">
+                                    {barber.name}
+                                  </h4>
+                                  {isOffline && (
+                                    <span className="text-[9px] bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-450 font-black tracking-wider uppercase">
+                                      Absent
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-neutral-500 font-semibold truncate mt-0.5">
+                                  {barber.specialties.join(' · ')}
+                                </p>
+                              </div>
+
+                              {!isOffline ? (
+                                <div className="text-right flex items-center gap-2 shrink-0">
+                                  <div>
+                                    <span className="text-base font-black font-mono text-neutral-900 block leading-none">
+                                      {stats.waitingCount}
+                                    </span>
+                                    <span className={`text-[9px] font-mono font-black uppercase tracking-wider block mt-1 ${stats.estTime === 0 ? 'text-emerald-500' : 'text-amber-550'}`}>
+                                      {stats.estTime === 0 ? 'Disponible' : `~${stats.estTime}m`}
+                                    </span>
+                                  </div>
+                                  <span className="text-neutral-350 text-xl font-black group-hover:translate-x-0.5 transition-transform pointer-events-none">›</span>
+                                </div>
+                              ) : (
+                                <span className="text-neutral-350 text-xl font-black group-hover:translate-x-0.5 transition-transform shrink-0">›</span>
                               )}
                             </div>
-                            <p className="text-xs text-neutral-400 truncate mt-0.5">
-                              {barber.specialties.join(' · ')}
-                            </p>
-                          </div>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-                          {!isOffline && (
-                            <div className="text-right">
-                              <span className="text-lg font-mono font-bold text-white block leading-none">
-                                {stats.waitingCount}
-                              </span>
-                              <span className="text-[10px] text-neutral-500 font-mono">
-                                {stats.estTime === 0 ? 'Disponible' : `~${stats.estTime}m`}
-                              </span>
+                    {/* SERVICES SECTION */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center gap-1.5 px-0.5">
+                        <span className="text-base">💈</span>
+                        <h4 className="text-xs font-black text-neutral-900 uppercase tracking-widest">
+                          Nos services et tarifs
+                        </h4>
+                      </div>
+
+                      <div className="space-y-4">
+                        {Object.entries(
+                          services.reduce((acc, s) => {
+                            const cat = s.category || 'Coupes';
+                            if (!acc[cat]) acc[cat] = [];
+                            acc[cat].push(s);
+                            return acc;
+                          }, {} as Record<string, Service[]>)
+                        ).map(([catName, list]) => (
+                          <div key={catName} className="space-y-2">
+                            <span className="text-[9px] font-mono font-black text-neutral-400 tracking-widest block uppercase px-1">
+                              {catName}
+                            </span>
+                            <div className="grid gap-2">
+                              {(list as Service[]).map((s) => {
+                                const isBarbe = s.name.toLowerCase().includes('barbe') || s.id.includes('barbe') || s.name.toLowerCase().includes('rasage');
+                                const isSoin = s.name.toLowerCase().includes('soin') || s.name.toLowerCase().includes('masque') || s.name.toLowerCase().includes('shampoing') || s.id.includes('soin');
+                                const svcIcon = isBarbe ? '🪒' : isSoin ? '💆' : '✂️';
+                                
+                                return (
+                                  <div
+                                    key={s.id}
+                                    className="flex items-center justify-between p-3.5 bg-white border border-neutral-200 rounded-2xl shadow-sm hover:bg-neutral-100/60 transition-colors"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center text-lg shrink-0">
+                                        {svcIcon}
+                                      </div>
+                                      <div>
+                                        <p className="text-xs font-black text-neutral-900 leading-snug">
+                                          {s.name}
+                                        </p>
+                                        <p className="text-[10px] text-neutral-500 font-semibold flex items-center gap-1.5 mt-0.5 font-mono">
+                                          <Clock className="w-3.5 h-3.5" />
+                                          {s.duration} mins de coiffe
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <span className="bg-neutral-900 text-white font-mono font-bold text-xs py-1.5 px-3 rounded-full shrink-0 shadow-sm border border-neutral-950">
+                                      {formatFCFA(s.price)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </motion.div>
                 ) : (
                   /* Step B: Fill Check-in Details */
@@ -431,7 +550,7 @@ export default function ClientView() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="bg-neutral-900 border border-neutral-800/80 rounded-2xl p-4 shadow-md"
+                    className="bg-white border border-neutral-200 rounded-3xl p-5 shadow-sm"
                   >
                     <button
                       onClick={() => {
@@ -440,20 +559,20 @@ export default function ClientView() {
                         window.history.pushState({}, '', `/shop/${shopId}`);
                         window.dispatchEvent(new PopStateEvent('popstate'));
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-400 hover:text-white mb-4 bg-neutral-800 px-2.5 py-1 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-neutral-600 hover:text-neutral-900 mb-5 bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
                     >
-                      <ArrowLeft className="w-3.5 h-3.5" /> Changer de coiffeur
+                      <ArrowLeft className="w-4 h-4" /> Changer de coiffeur
                     </button>
 
-                    <h4 className="text-sm font-bold text-white mb-1">Prendre Un Ticket</h4>
-                    <p className="text-xs text-neutral-400 mb-4">
-                      Coiffeur sélectionné : <span className="text-green-400 font-medium">{selectedBarber?.name}</span>
+                    <h4 className="text-sm font-black text-neutral-950 mb-1">Prendre Un Ticket</h4>
+                    <p className="text-xs text-neutral-500 mb-4 select-none">
+                      Coiffeur sélectionné : <span className="text-amber-600 font-extrabold">{selectedBarber?.name}</span>
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                       {/* Name client Input */}
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
+                        <label className="block text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
                           Votre Prénom / Nom <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -464,16 +583,16 @@ export default function ClientView() {
                             value={clientName}
                             onChange={(e) => setClientName(e.target.value)}
                             maxLength={25}
-                            className="w-full bg-neutral-950 border border-neutral-850 focus:border-green-500/50 outline-none text-white text-sm rounded-xl py-2.5 pl-3 pr-10 transition-colors"
+                            className="w-full bg-neutral-50 border border-neutral-200 focus:border-neutral-900 focus:bg-white outline-none text-neutral-900 text-xs font-semibold rounded-xl py-3 pl-3.5 pr-10 transition-all shadow-sm"
                           />
-                          <User className="absolute right-3 top-3 w-4 h-4 text-neutral-500" />
+                          <User className="absolute right-3.5 top-3.5 w-4 h-4 text-neutral-400" />
                         </div>
                       </div>
 
                       {/* Phone client Input */}
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
-                          Votre Numéro de téléphone <span className="text-neutral-500 text-[9px] lowercase font-normal">(optionnel)</span>
+                        <label className="block text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
+                          Votre Numéro de téléphone <span className="text-neutral-400 text-[9px] lowercase font-normal">(optionnel)</span>
                         </label>
                         <div className="relative">
                           <input
@@ -482,18 +601,18 @@ export default function ClientView() {
                             value={clientPhone}
                             onChange={(e) => setClientPhone(e.target.value)}
                             maxLength={20}
-                            className="w-full bg-neutral-950 border border-neutral-850 focus:border-green-500/50 outline-none text-white text-sm rounded-xl py-2.5 pl-3 pr-10 transition-colors"
+                            className="w-full bg-neutral-50 border border-neutral-200 focus:border-neutral-900 focus:bg-white outline-none text-neutral-900 text-xs font-semibold rounded-xl py-3 pl-3.5 pr-10 transition-all shadow-sm"
                           />
-                          <span className="absolute right-3.5 top-3.5 text-xs text-neutral-500 font-mono">📱</span>
+                          <span className="absolute right-3.5 top-3.5 text-xs text-neutral-400 font-mono select-none">📱</span>
                         </div>
-                        <p className="text-[10px] text-neutral-500 mt-1">
+                        <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-normal">
                           Sert au coiffeur pour vous contacter ou vous envoyer votre reçu.
                         </p>
                       </div>
 
                       {/* Service Selector */}
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
+                        <label className="block text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest mb-1.5">
                           Prestation demandée
                         </label>
                         <div className="space-y-2">
@@ -501,24 +620,28 @@ export default function ClientView() {
                             <label
                               key={service.id}
                               onClick={() => setSelectedServiceId(service.id)}
-                              className={`flex justify-between items-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                              className={`flex justify-between items-center p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
                                 selectedServiceId === service.id
-                                  ? 'bg-green-500/10 border-green-500/40 text-green-300'
-                                  : 'bg-neutral-950 text-neutral-300 border-neutral-850 hover:border-neutral-800'
+                                  ? 'bg-neutral-900 border-neutral-950 text-white shadow-sm'
+                                  : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:bg-neutral-100/50'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                  selectedServiceId === service.id ? 'border-green-400' : 'border-neutral-600'
+                              <div className="flex items-center gap-3">
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  selectedServiceId === service.id ? 'border-amber-400' : 'border-neutral-300'
                                 }`}>
-                                  {selectedServiceId === service.id && <div className="w-2 h-2 rounded-full bg-green-400"></div>}
+                                  {selectedServiceId === service.id && <div className="w-2 h-2 rounded-full bg-amber-450 bg-amber-400"></div>}
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-xs font-semibold">{service.name}</p>
-                                  <p className="text-[10px] text-neutral-500">{service.duration} mins de coiffe</p>
+                                  <p className={`text-xs font-black ${selectedServiceId === service.id ? 'text-white' : 'text-neutral-900'}`}>
+                                    {service.name}
+                                  </p>
+                                  <p className={`text-[10px] font-semibold ${selectedServiceId === service.id ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                                    {service.duration} mins de coiffe
+                                  </p>
                                 </div>
                               </div>
-                              <span className="text-xs font-bold font-mono">
+                              <span className={`text-xs font-bold font-mono ${selectedServiceId === service.id ? 'text-neutral-200' : 'text-[#111]'}`}>
                                 {formatFCFA(service.price)}
                               </span>
                             </label>
@@ -527,16 +650,16 @@ export default function ClientView() {
                       </div>
 
                       {/* Summary alert info before joining */}
-                      <div className="rounded-xl bg-neutral-950 p-3 space-y-1 text-[11px] text-neutral-400 border border-neutral-850">
+                      <div className="rounded-2xl bg-neutral-50 p-4 space-y-1.5 text-xs font-semibold text-neutral-500 border border-neutral-200">
                         <div className="flex justify-between">
                           <span>Temps d'attente estimé :</span>
-                          <span className="text-white font-medium">
+                          <span className="text-neutral-900 font-black">
                             ~{getEstimatedWaitTime(queue, selectedBarberId || '', selectedBarber?.avgTime || 20)} mins
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Clients devant vous :</span>
-                          <span className="text-white font-medium">
+                          <span className="text-neutral-900 font-black">
                             {queue.filter((q) => q.barberId === selectedBarberId && (q.status === 'waiting' || q.status === 'active')).length}
                           </span>
                         </div>
@@ -546,10 +669,10 @@ export default function ClientView() {
                       <button
                         type="submit"
                         disabled={isSubmitting || !clientName.trim()}
-                        className="w-full bg-white hover:bg-neutral-100 disabled:bg-neutral-850 disabled:text-neutral-500 text-neutral-950 font-bold rounded-xl py-3 text-sm tracking-tight transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 shadow-md shadow-white/5"
+                        className="w-full bg-neutral-900 hover:bg-neutral-950 disabled:bg-neutral-205 disabled:text-neutral-400 text-white font-bold rounded-2xl py-3.5 text-xs uppercase tracking-wider transition-all active:scale-[0.99] flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                       >
                         {isSubmitting ? (
-                          <div className="w-4 h-4 rounded-full border-2 border-neutral-950 border-t-transparent animate-spin"></div>
+                          <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
                         ) : (
                           <>
                             Rejoindre la file d'attente

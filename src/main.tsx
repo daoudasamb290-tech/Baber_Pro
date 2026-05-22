@@ -3,11 +3,26 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+async function initApp() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    (window as any).__SUPABASE_CONFIG__ = {
+      supabaseUrl: data.supabaseUrl,
+      supabaseAnonKey: data.supabaseAnonKey,
+    };
+  } catch (err) {
+    console.warn("Failed to retrieve dynamic configuration from API, falling back to client defaults:", err);
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
+
+initApp();
 
 // Register service worker for PWA support in production environments
 if ('serviceWorker' in navigator) {

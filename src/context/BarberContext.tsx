@@ -9,6 +9,7 @@ import { INITIAL_BARBERS, INITIAL_SERVICES, getSeededData, getEstimatedWaitTime 
 import {
   supabase,
   dbSaveShopName,
+  dbSaveShopSetting,
   dbUpsertQueueItem,
   dbDeleteQueueItem,
   dbInsertTransaction,
@@ -22,6 +23,10 @@ import {
 
 interface BarberContextType {
   shopName: string;
+  shopAddress: string;
+  shopCoverUrl: string;
+  shopLogoUrl: string;
+  shopIsOpen: boolean;
   barbers: Barber[];
   services: Service[];
   queue: QueueItem[];
@@ -32,6 +37,10 @@ interface BarberContextType {
   
   // Controls
   setShopName: (name: string) => void;
+  setShopAddress: (address: string) => void;
+  setShopCoverUrl: (url: string) => void;
+  setShopLogoUrl: (url: string) => void;
+  setShopIsOpen: (open: boolean) => void;
   setCurrentRole: (role: 'client' | 'barber' | 'admin') => void;
   setActiveBarberId: (id: string) => void;
   setClientActiveTicketId: (id: string | null) => void;
@@ -48,7 +57,7 @@ interface BarberContextType {
   // Custom Settings modifiers
   addBarberCount: (name: string, specialties: string[], avgTime: number) => Barber;
   removeBarberCount: (id: string) => void;
-  addServiceCount: (name: string, price: number, duration: number) => Service;
+  addServiceCount: (name: string, price: number, duration: number, category?: string) => Service;
   removeServiceCount: (id: string) => void;
   
   // Simulator helpers
@@ -61,7 +70,23 @@ const BarberContext = createContext<BarberContextType | undefined>(undefined);
 
 export function BarberProvider({ children }: { children: ReactNode }) {
   const [shopName, setShopNameState] = useState<string>(() => {
-    return localStorage.getItem('barberq_shop_name') || "King's Barbershop";
+    return localStorage.getItem('barberq_shop_name') || "Salon Barber_Pro";
+  });
+
+  const [shopAddress, setShopAddressState] = useState<string>(() => {
+    return localStorage.getItem('barberq_shop_address') || "Avenue Blaise Diagne, Dakar, Sénégal";
+  });
+
+  const [shopCoverUrl, setShopCoverUrlState] = useState<string>(() => {
+    return localStorage.getItem('barberq_shop_cover') || "";
+  });
+
+  const [shopLogoUrl, setShopLogoUrlState] = useState<string>(() => {
+    return localStorage.getItem('barberq_shop_avatar') || "";
+  });
+
+  const [shopIsOpen, setShopIsOpenState] = useState<boolean>(() => {
+    return (localStorage.getItem('barberq_shop_is_open') || "true") === "true";
   });
 
   const [barbers, setBarbers] = useState<Barber[]>(() => {
@@ -102,6 +127,30 @@ export function BarberProvider({ children }: { children: ReactNode }) {
     dbSaveShopName(name);
   };
 
+  const setShopAddress = (address: string) => {
+    setShopAddressState(address);
+    localStorage.setItem('barberq_shop_address', address);
+    dbSaveShopSetting('shop_address', address);
+  };
+
+  const setShopCoverUrl = (url: string) => {
+    setShopCoverUrlState(url);
+    localStorage.setItem('barberq_shop_cover', url);
+    dbSaveShopSetting('shop_cover', url);
+  };
+
+  const setShopLogoUrl = (url: string) => {
+    setShopLogoUrlState(url);
+    localStorage.setItem('barberq_shop_avatar', url);
+    dbSaveShopSetting('shop_avatar', url);
+  };
+
+  const setShopIsOpen = (open: boolean) => {
+    setShopIsOpenState(open);
+    localStorage.setItem('barberq_shop_is_open', open ? "true" : "false");
+    dbSaveShopSetting('shop_is_open', open ? "true" : "false");
+  };
+
   // Synchronize initial data from Supabase if configured
   useEffect(() => {
     async function loadSupabaseData() {
@@ -109,6 +158,14 @@ export function BarberProvider({ children }: { children: ReactNode }) {
         const data = await dbFetchAll();
         if (data) {
           if (data.shopName) setShopNameState(data.shopName);
+          // @ts-ignore
+          if (data.shopAddress) setShopAddressState(data.shopAddress);
+          // @ts-ignore
+          if (data.shopCover !== undefined) setShopCoverUrlState(data.shopCover || "");
+          // @ts-ignore
+          if (data.shopAvatar !== undefined) setShopLogoUrlState(data.shopAvatar || "");
+          // @ts-ignore
+          if (data.shopIsOpen !== undefined) setShopIsOpenState(data.shopIsOpen);
           if (data.barbers) setBarbers(data.barbers);
           if (data.services) setServices(data.services);
           if (data.queue) setQueue(data.queue);
@@ -556,6 +613,10 @@ export function BarberProvider({ children }: { children: ReactNode }) {
     <BarberContext.Provider
       value={{
         shopName,
+        shopAddress,
+        shopCoverUrl,
+        shopLogoUrl,
+        shopIsOpen,
         barbers,
         services,
         queue,
@@ -564,6 +625,10 @@ export function BarberProvider({ children }: { children: ReactNode }) {
         activeBarberId,
         clientActiveTicketId,
         setShopName,
+        setShopAddress,
+        setShopCoverUrl,
+        setShopLogoUrl,
+        setShopIsOpen,
         setCurrentRole,
         setActiveBarberId,
         setClientActiveTicketId,

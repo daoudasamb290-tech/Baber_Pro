@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useBarber } from '../context/BarberContext';
 import { formatFCFA } from '../utils';
 import { QueueItem } from '../types';
-import { Play, Sparkles, CheckCircle2, UserCheck, FastForward, Clock, ToggleLeft, ToggleRight, XCircle, Power, User, HelpCircle, QrCode, Download, Plus, Settings, ClipboardList, Trash2, Scissors, Save } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, UserCheck, FastForward, Clock, ToggleLeft, ToggleRight, XCircle, Power, User, HelpCircle, QrCode, Download, Plus, Settings, ClipboardList, Trash2, Scissors, Save, Image, Upload, Link, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -29,6 +29,8 @@ export default function BarberDashboard() {
     removeBarberCount,
     addServiceCount,
     removeServiceCount,
+    shopCoverUrl,
+    setShopCoverUrl,
   } = useBarber();
 
   const [activeTab, setActiveTab] = useState<'queue' | 'settings'>('queue');
@@ -36,6 +38,90 @@ export default function BarberDashboard() {
 
   // Forms states for parameters
   const [shopNameInput, setShopNameInput] = useState(shopName);
+  const [coverUrlInput, setCoverUrlInput] = useState(shopCoverUrl || '');
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const presets = [
+    {
+      name: 'Moderne Bois',
+      url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+      name: 'Chaleureux Rétro',
+      url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+      name: 'Salon Vintage',
+      url: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+      name: 'Design Épuré',
+      url: 'https://images.unsplash.com/photo-1599351431247-f5793080e122?auto=format&fit=crop&w=1200&q=80',
+    },
+  ];
+
+  const handleApplyPreset = (url: string) => {
+    setShopCoverUrl(url);
+    setImageError(null);
+  };
+
+  const handleApplyUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (coverUrlInput.trim()) {
+      setShopCoverUrl(coverUrlInput.trim());
+      setImageError(null);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setImageError("Le fichier sélectionné doit être une image.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+            setShopCoverUrl(compressedBase64);
+            setCoverUrlInput('');
+            setImageError(null);
+          } catch (err: any) {
+            console.error("Canvas conversion failed:", err);
+            setImageError("Impossible de convertir le fichier. Utilisez un lien ou une image plus petite.");
+          }
+        }
+      };
+      img.onerror = () => {
+        setImageError("Fichier image illisible.");
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      setImageError("Erreur lors de la lecture du fichier.");
+    };
+    reader.readAsDataURL(file);
+  };
   
   // Barber Account addition Form
   const [newBarberName, setNewBarberName] = useState('');
@@ -63,6 +149,12 @@ export default function BarberDashboard() {
   useEffect(() => {
     setShopNameInput(shopName);
   }, [shopName]);
+
+  useEffect(() => {
+    if (shopCoverUrl) {
+      setCoverUrlInput(shopCoverUrl);
+    }
+  }, [shopCoverUrl]);
 
   useEffect(() => {
     if (!currentActiveClient || !currentActiveClient.startedAt) {
@@ -223,7 +315,6 @@ export default function BarberDashboard() {
         <button
           onClick={async () => {
             const { dbSignOut } = await import('../lib/supabase');
-            localStorage.removeItem('barberq_offline_session');
             try {
               await dbSignOut();
               window.location.href = '/barber/login';
@@ -511,6 +602,137 @@ export default function BarberDashboard() {
                   </div>
                 </div>
               </form>
+
+              <div className="mt-4 pt-4 border-t border-neutral-855 space-y-3.5">
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-2">
+                    Photo de Couverture du Salon (Boutique Client)
+                  </label>
+                  
+                  {/* Current Preview or Placeholder */}
+                  <div className="relative w-full h-32 rounded-xl bg-neutral-950 overflow-hidden border border-neutral-800 mb-3 group flex items-center justify-center">
+                    {shopCoverUrl ? (
+                      <>
+                        <img
+                          src={shopCoverUrl}
+                          alt="Prévisualisation couverture"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-neutral-950/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShopCoverUrl('');
+                              setCoverUrlInput('');
+                            }}
+                            className="bg-red-650 hover:bg-red-650 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer"
+                          >
+                            Retirer la photo
+                          </button>
+                        </div>
+                        <div className="absolute top-2 left-2 bg-neutral-950/70 backdrop-blur-md text-[9px] text-white font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 select-none font-mono uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Couverture active
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <Image className="w-7 h-7 text-neutral-600 mx-auto mb-1.5" />
+                        <p className="text-[10px] text-neutral-400 font-bold">Aucune photo personnalisée</p>
+                        <p className="text-[9px] text-neutral-500 mt-0.5">Le salon utilise le fond dégradé officiel</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions Area */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                    {/* Image File input trigger */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="cover-file-upload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      <label
+                        htmlFor="cover-file-upload"
+                        className="w-full h-full min-h-[38px] flex items-center justify-center gap-1.5 bg-neutral-950 border border-neutral-850 hover:border-neutral-750 text-neutral-300 text-[11px] font-bold rounded-xl py-2 px-3 cursor-pointer transition-colors text-center"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-neutral-400" />
+                        Uploader un fichier
+                      </label>
+                    </div>
+
+                    {/* Image URL Form */}
+                    <form onSubmit={handleApplyUrl} className="flex gap-1.5">
+                      <input
+                        type="url"
+                        placeholder="Lien URL de la photo..."
+                        className="flex-1 bg-neutral-950 border border-neutral-850 text-white text-[11px] rounded-xl px-3 outline-none focus:border-green-550 transition-colors"
+                        value={coverUrlInput}
+                        onChange={(e) => setCoverUrlInput(e.target.value)}
+                      />
+                      <button
+                        type="submit"
+                        className="bg-neutral-800 hover:bg-neutral-750 text-white text-xs font-bold px-3 rounded-xl flex items-center justify-center cursor-pointer"
+                        title="Appliquer l'URL"
+                      >
+                        <Link className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Presets Gallery */}
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-widest font-mono">
+                      Ou choisissez parmi nos salons modèles :
+                    </p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {presets.map((preset) => {
+                        const isSelected = shopCoverUrl === preset.url;
+                        return (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            onClick={() => handleApplyPreset(preset.url)}
+                            className={`group relative h-11 rounded-lg overflow-hidden border transition-all ${
+                              isSelected
+                                ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md scale-[1.02]'
+                                : 'border-neutral-850 hover:border-neutral-700'
+                            }`}
+                          >
+                            <img
+                              src={preset.url}
+                              alt={preset.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 bg-neutral-950/40 flex items-end p-1">
+                              <span className="text-[8px] text-white font-medium truncate w-full text-center">
+                                {preset.name}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute top-1 right-1 bg-amber-500 rounded-full p-0.5 shadow">
+                                <Check className="w-2 h-2 text-neutral-950 stroke-[3.5]" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Errors display */}
+                  {imageError && (
+                    <p className="text-red-500 text-[10px] font-semibold mt-2">
+                       ⚠️ {imageError}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* QR Code printing */}

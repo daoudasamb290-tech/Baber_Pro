@@ -17,6 +17,7 @@ export interface Service {
   name: string;
   price: number; // FCFA
   duration: number; // minutes
+  category?: string; // Coupes / Barbe / Soins
 }
 
 export interface QueueItem {

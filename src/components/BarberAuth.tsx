@@ -52,6 +52,8 @@ export function BarberLogin({ navigate, onAuthSuccess }: AuthProps) {
           </p>
         </div>
 
+
+
         {/* Error message */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-150 rounded-xl text-red-650 text-xs font-semibold">
@@ -107,24 +109,6 @@ export function BarberLogin({ navigate, onAuthSuccess }: AuthProps) {
           >
             {loading ? "Connexion en cours..." : "Se connecter"}
             {!loading && <ArrowRight className="w-4 h-4" />}
-          </button>
-
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-neutral-200"></div>
-            <span className="flex-shrink mx-3 text-neutral-400 text-[10px] font-bold uppercase tracking-wider font-mono">ou</span>
-            <div className="flex-grow border-t border-neutral-200"></div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              localStorage.setItem('barberq_offline_session', 'true');
-              window.location.reload();
-            }}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-extrabold text-sm py-3 rounded-xl transition-all shadow-md shadow-amber-500/10 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="w-4.5 h-4.5 animate-pulse" />
-            Accéder en Mode Démo (Sans Connexion)
           </button>
         </form>
 
@@ -203,6 +187,8 @@ export function BarberRegister({ navigate }: AuthProps) {
             Créer ma Boutique de Barbier
           </p>
         </div>
+
+
 
         {/* Error message */}
         {error && (

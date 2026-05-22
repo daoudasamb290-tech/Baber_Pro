@@ -130,28 +130,49 @@ const cleanEnvVar = (val: string): string => {
     cleaned === 'VITE_SUPABASE_URL_PLACEHOLDER' || 
     cleaned === 'VITE_SUPABASE_ANON_KEY_PLACEHOLDER' ||
     cleaned === 'VITE_SUPABASE_ANON_KEy' ||
-    cleaned === 'VITE_SUPABASE_ANON_KEY'
+    cleaned === 'VITE_SUPABASE_ANON_KEY' ||
+    cleaned === 'VITE_SUPABASE_URL'
   ) {
     return '';
   }
   return cleaned;
 };
 
-// @ts-ignore
-const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-// @ts-ignore
-const rawSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEy || '';
+const DEFAULT_URL = 'https://mranisjoydkfmsowuzms.supabase.co';
+const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yYW5pc2pveWRrZm1zb3d1em1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU4ODYsImV4cCI6MjA5NDk5MTg4Nn0.ZOY6FH2JMd6vz5w76QanqQxuWIL0VcLNKLvU2xuinZQ';
 
-const supabaseUrl = cleanEnvVar(rawSupabaseUrl);
-const supabaseAnonKey = cleanEnvVar(rawSupabaseAnonKey);
+let supabaseInstance: any = null;
 
-console.log("[Supabase Init] rawUrl:", rawSupabaseUrl, "rawAnonKey:", rawSupabaseAnonKey ? rawSupabaseAnonKey.substring(0, 10) + "..." : "empty");
-console.log("[Supabase Init] cleanUrl:", supabaseUrl, "cleanAnonKey length:", supabaseAnonKey ? supabaseAnonKey.length : 0);
+export function getSupabase() {
+  if (!supabaseInstance) {
+    const config = (window as any).__SUPABASE_CONFIG__ || {};
+    const rawSupabaseUrl = config.supabaseUrl || '';
+    const rawSupabaseAnonKey = config.supabaseAnonKey || '';
 
-// Lazy initialization of the Supabase Client
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+    let supabaseUrl = cleanEnvVar(rawSupabaseUrl);
+    let supabaseAnonKey = cleanEnvVar(rawSupabaseAnonKey);
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      supabaseUrl = DEFAULT_URL;
+      supabaseAnonKey = DEFAULT_KEY;
+    }
+
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return supabaseInstance;
+}
+
+// Proxied client that forwards everything to the dynamic Supabase instance
+export const supabase = new Proxy({} as any, {
+  get(target, prop, receiver) {
+    const instance = getSupabase();
+    const value = Reflect.get(instance, prop, receiver);
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  }
+});
 
 export function isSupabaseConnected(): boolean {
   return !!supabase;
@@ -292,6 +313,11 @@ export async function dbFetchAll() {
     ]);
 
     const shopName = shopRes.data?.find(r => r.key === 'shop_name')?.value;
+    const shopAddress = shopRes.data?.find(r => r.key === 'shop_address')?.value;
+    const shopCover = shopRes.data?.find(r => r.key === 'shop_cover')?.value;
+    const shopAvatar = shopRes.data?.find(r => r.key === 'shop_avatar')?.value;
+    const shopIsOpenSetting = shopRes.data?.find(r => r.key === 'shop_is_open')?.value;
+    const shopIsOpen = shopIsOpenSetting !== undefined ? shopIsOpenSetting === 'true' : undefined;
     
     // Map database snake_case back to camelCase
     const barbers: Barber[] | undefined = barbersRes.data?.map(b => ({
@@ -307,7 +333,8 @@ export async function dbFetchAll() {
       id: s.id,
       name: s.name,
       price: Number(s.price),
-      duration: s.duration
+      duration: s.duration,
+      category: s.category || undefined
     }));
 
     const queue: QueueItem[] | undefined = queueRes.data?.map(q => ({
@@ -337,6 +364,10 @@ export async function dbFetchAll() {
 
     return {
       shopName,
+      shopAddress,
+      shopCover,
+      shopAvatar,
+      shopIsOpen,
       barbers: barbers && barbers.length > 0 ? barbers : undefined,
       services: services && services.length > 0 ? services : undefined,
       queue: queue,
@@ -411,6 +442,19 @@ export async function dbSaveShopName(name: string) {
   }
 }
 
+// 5b. Save general shop setting
+export async function dbSaveShopSetting(key: string, value: string) {
+  if (!supabase) return;
+  try {
+    await supabase.from('shop_settings').upsert({
+      key: key,
+      value: value
+    });
+  } catch (err) {
+    console.error(`Error updating setting for key ${key}:`, err);
+  }
+}
+
 // 6. Save coiffeur accounts
 export async function dbSaveBarber(b: Barber) {
   if (!supabase) return;
@@ -441,12 +485,25 @@ export async function dbDeleteBarber(id: string) {
 export async function dbSaveService(s: Service) {
   if (!supabase) return;
   try {
-    await supabase.from('services').upsert({
+    const payload: any = {
       id: s.id,
       name: s.name,
       price: s.price,
       duration: s.duration
-    });
+    };
+    if (s.category) {
+      payload.category = s.category;
+    }
+    const { error } = await supabase.from('services').upsert(payload);
+    if (error) {
+      // If column category doesn't exist, retry without it
+      if (error.message?.includes('category') || JSON.stringify(error).includes('category')) {
+        delete payload.category;
+        await supabase.from('services').upsert(payload);
+      } else {
+        throw error;
+      }
+    }
   } catch (err) {
     console.error("Error saving service:", err);
   }

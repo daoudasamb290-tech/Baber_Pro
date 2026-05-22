@@ -38,18 +38,6 @@ function AppContent() {
 
   // Sync Supabase Auth session dynamically
   useEffect(() => {
-    const isOffline = localStorage.getItem('barberq_offline_session') === 'true';
-    if (isOffline) {
-      setUser({ id: 'offline-barber', email: 'demo@barberpro.fr', isOffline: true });
-      setUserLoading(false);
-      return;
-    }
-
-    if (!supabase) {
-      setUserLoading(false);
-      return;
-    }
-
     // Get current logged in user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
@@ -58,9 +46,6 @@ function AppContent() {
 
     // Listen to real-time auth status updates
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (localStorage.getItem('barberq_offline_session') === 'true') {
-        return;
-      }
       setUser(session?.user ?? null);
       setUserLoading(false);
     });

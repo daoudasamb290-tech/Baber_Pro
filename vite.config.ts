@@ -5,8 +5,6 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import {defineConfig} from 'vite';
 
-import { cloudflare } from "@cloudflare/vite-plugin";
-
 // Force-load the local .env file if it exists to override any shadowed environment placeholder values
 const localEnv: Record<string, string> = {};
 try {
@@ -27,11 +25,7 @@ const supabaseAnonKey = localEnv.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPA
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), cloudflare()],
-    define: {
-      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
-      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
-    },
+    plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
